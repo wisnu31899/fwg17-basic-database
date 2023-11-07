@@ -27,7 +27,8 @@ update "product" set
 "updated_At" = now()
 where "product_id" = 7;
 
-delete from "product" where "product_id" = 6;
+/*delete banyak column dengan in ()*/
+delete from "product" where "product_id"  in (9, 10, 11, 12, 13, 14, 15, 16);
 
 
 
@@ -57,6 +58,8 @@ update "promo" set
 "updated_At" = now()
 where "promo_id" = 1;
 
+delete from "promo" where "promo_id" in (4,5,6);
+/*delete 1 column hanya dengan =*/
 delete from "promo" where "promo_id" = 3;
 
 
@@ -85,6 +88,7 @@ update "order" set
 "updated_At" = now()
 where "order_id" = 3;
 
+delete from "order" where "id" in (4,5,6);
 delete from "order" where "order_id" = 1;
 
 
@@ -116,3 +120,46 @@ update "user" set
 where "user_id" = 3;
 
 delete from "user" where "user_id" = 1;
+delete from "user" where "user_id" in (4, 5, 6);
+
+/*penggunaan alter*/
+/*mengganti nama pada table "product*/
+alter table "product" rename "many_supply" to "quantity";
+alter table "product" rename "product_id" to "id";
+alter table "promo" rename "promo_id" to "id";
+alter table "order" rename "order_id" to "id";
+alter table "user" rename "user_id" to "id";
+
+/*menambah column pada table "product*/
+alter table "product" add column "description" text;
+alter table "product" add column "inAvaliable" bool;
+alter table "promo" add column "category" varchar(50);
+update "promo" set "category" = 'coffe' where "promo_id" = 1;
+update "promo" set "category" = 'food' where "promo_id" = 2;
+update "promo" set "description" = '15% special discount on food items for student with student ID' where "promo_id" = 2;
+
+/*menghapus column pada table "product*/
+alter table "product" drop column "inAvaliable";
+
+/*mengganti tipe data column pada table "user"*/
+alter table "user" alter column "gender" type varchar(50);
+
+/*menambah batasan isi column pada table "user"*/
+alter table "user" add constraint year_check check ("gender" in ('Laki-laki', 'Perempuan'));
+
+/*penggunaan relation*/
+/*pada table "order"*/
+/*mengganti nama*/
+alter table "order" rename "costumer_name" to "user_id";
+/*ubah menjadi int = 0*/
+update "order" set
+"user_id" = 0
+where "id" in (2,3);
+/*definisikan int pada column "user_id"*/
+alter table "order" alter column "user_id" type int using "user_id"::int;
+/* buatkan reference antara "user_id" dengan "id" dari table "user" (masih error)*/
+alter table "order" add column "user_id" int references "user" ("id");
+
+/*penggunaan select & join*/
+/* untuk ambil semua data (*) dengan sort (category = coffe)*/
+select *from "product" where "category" = 'coffe';
