@@ -1,165 +1,131 @@
-create table if not exists "product"(
-	"product_id" serial primary key,
-	"product_name" varchar(255) not null,
-	"category" varchar(50),
-	"price" int not null,
-	"many_supply" int not null,
-	"created_At" timestamp default now(),
-	"updated_At" timestamp
+-- Active: 1699586113023@@127.0.0.1@5432@Coffe Shop@public
+CREATE TYPE "roles" AS ENUM ('admin', 'staff', 'customer');
+CREATE TABLE "users" (
+	"id" SERIAL PRIMARY KEY,
+	"fullName" VARCHAR(100) NOT NULL,
+	"email" VARCHAR(100) NOT NULL,
+	"password" VARCHAR(100) NOT NULL,
+	"address" TEXT,
+	"picture" VARCHAR(255),
+	"phoneNumber" VARCHAR(15) NOT NULL,
+	"role" "roles",
+	"created_At" TIMESTAMP DEFAULT now(),
+	"updated_At" TIMESTAMP
 );
-
-insert into "product" ("product_name", "category", "price", "many_supply")
-values 
-	('cafe latte','coffe',20000,50),
-	('long black','coffe',20000,45),
-	('espresso','coffe',18000,40),
-	('lemon tea','tea',20000,45),
-	('lychee tea','tea',20000,40),
-	('tea original','tea',15000,50),
-	('french fries','food',15000,50),
-	('fried rice','food',25000,30);
-
-update "product" set
-"product_name" = 'mie goreng',
-"category" = 'food',
-"price" = 10000,
-"many_supply" = 60,
-"updated_At" = now()
-where "product_id" = 7;
-
-/*delete banyak column dengan in ()*/
-delete from "product" where "product_id"  in (9, 10, 11, 12, 13, 14, 15, 16);
-
-
-
-create table if not exists "promo"(
-	"promo_id" serial primary key,
-	"promo_name" varchar(255) not null,
-	"discount" decimal(5,2) not null,
-	"start_date" date not null,
-	"end_date" date not null,
-	"description" text,
-	"created_At" timestamp default now(),
-	"updated_At" timestamp
+CREATE TABLE "products" (
+    "id" SERIAL PRIMARY KEY,
+    "name" VARCHAR(100) NOT NULL UNIQUE,
+    "price" NUMERIC(12,2) NOT NULL,
+    "quantity" INT,
+    "isAvaiable" BOOLEAN,
+    "description" TEXT,
+    "image" VARCHAR(100),
+    "createdAt" TIMESTAMP DEFAULT now(),
+    "updatedAt" TIMESTAMP
 );
-
-insert into "promo" ("promo_name", "discount", "start_date", "end_date", "description")
-values 
-	('weekend price',0.20,'2023-11-11','2023-11-12','20% on all items for weekend'),
-	('student price',0.15,'2023-11-06','2023-11-12','15% special discount on all items for student with student ID'),
-	('couple price',0.25,'2021-11-06','2023-11-10','25% on all items with couple clothes');
-	
-update "promo" set
-"promo_name" = 'two days coffe',
-"discount" = 0.20,
-"start_date" = '2023-11-07',
-"end_date" = '2023-11-08',
-"description" = '20% all coffe item because two days full in coffe',
-"updated_At" = now()
-where "promo_id" = 1;
-
-delete from "promo" where "promo_id" in (4,5,6);
-/*delete 1 column hanya dengan =*/
-delete from "promo" where "promo_id" = 3;
-
-
-
-create table if not exists "order"(
-	"order_id" serial primary key,
-	"costumer_name" varchar(255) not null,
-	"order_date" date not null,
-	"total" int not null,
-	"status" varchar(50) default 'pending',
-	"created_At" timestamp default now(),
-	"updated_At" timestamp
+ALTER TABLE "products" DROP COLUMN "quantity";
+ALTER TABLE "products" RENAME "isAvaiable" TO "isAvailable";
+CREATE TABLE "categories" (
+    "id" SERIAL PRIMARY KEY,
+    "name" VARCHAR(100) NOT NULL,
+    "createdAt" TIMESTAMP DEFAULT now(),
+    "updatedAt" TIMESTAMP
 );
-
-insert into "order" ("costumer_name", "order_date", "total", "status")
-values 
-	('hilda','2023-11-06',63000,'completed'),
-	('maulana','2023-11-08',60000,'pending'),
-	('nadya','2023-11-11',100000,'pending');
-	
-update "order" set
-"costumer_name" = 'fajri',
-"order_date" = '2023-11-11',
-"total" = '120000',
-"status" = 'completed',
-"updated_At" = now()
-where "order_id" = 3;
-
-delete from "order" where "id" in (4,5,6);
-delete from "order" where "order_id" = 1;
-
-
-
-create table if not exists "user"(
-	"user_id" serial primary key,
-	"user_name" varchar(255) not null,
-	"password" varchar(50) not null,
-	"fullname" varchar(255) not null,
-	"email" varchar(255) not null,
-	"gender" varchar(10) check ("gender" in ('Laki-laki', 'Perempuan')),
-	"created_At\" timestamp default now(),
-	"updated_At" timestamp
+CREATE TABLE "productCategories"(
+    "id" SERIAL PRIMARY KEY,
+    "productId" INT REFERENCES "products"("id"),
+    "categoriesId" INT REFERENCES "categories"("id"),
+    "createdAt" TIMESTAMP DEFAULT now(),
+    "updatedAt" TIMESTAMP
 );
+CREATE TABLE "promo"(
+	"id" SERIAL PRIMARY KEY,
+	"name" VARCHAR(100) NOT NULL,
+	"code" VARCHAR(100) NOT NULL,
+	"description" TEXT,
+	"percentage" NUMERIC(3,2) NOT NULL,
+	"expiredAt" TIMESTAMP NOT NULL,
+	"maximumPromo" INT,
+	"minimumAmount" INT,
+	"created_At" TIMESTAMP DEFAULT now(),
+	"updated_At" TIMESTAMP
+);
+CREATE TYPE "orderStatus" AS ENUM ('ON-PROCCES', 'DELIVERED', 'CANCELED','READY-TO-PICK');
+CREATE TABLE "orders" (
+	"id" SERIAL PRIMARY KEY,
+	"userId" INT REFERENCES "users"("id"),
+    "productCategoriesId" INT REFERENCES "productCategories"("id"),
+	"orderNumber" VARCHAR(100) NOT NULL,
+	"promoId" INT REFERENCES "promo"("id"),
+	"total" INT,
+	"taxAmount" INT,
+	"status" "orderStatus",
+	"deliveryAddress" TEXT,
+	"fullName" VARCHAR(100) NOT NULL,
+	"created_At" TIMESTAMP DEFAULT now(),
+	"updated_At" TIMESTAMP
+);
+SELECT * FROM "orders";
+ALTER TABLE "orders" ALTER COLUMN "total" TYPE NUMERIC(12,2);
+ALTER TABLE "orders" ALTER COLUMN "total" SET NOT NULL;
+ALTER TABLE "orders" ALTER COLUMN "taxAmount" TYPE NUMERIC(12,2);
+INSERT INTO "users"("fullName","email","password","address","picture","phoneNumber","role")
+VALUES
+	('Agus Setiawan','agussetiawan@gmail.com','agus123','Jl. Merdeka No. 12, Bukit Kecil, Palembang',NULL,'+6281234567890','admin'),
+	('Budi Santoso','budisantoso@yahoo.com','budi456','Jl. Raya No. 34, Bukit Kecil, Palembang',NULL,'+6282345678901','staff'),
+	('Cici Nurul','cicinurul@hotmail.com','cici789','Jl. Kebun No. 56, Bukit Kecil, Palembang',NULL,'+6283456789012','customer'),
+	('Dedi Pratama','dedipratama@outlook.com','dedi012','Jl. Mangga No. 78, Bukit Kecil, Palembang',NULL,'+6284567890123','staff'),
+	('Eka Putri','ekaputri@gmail.com','eka345','Jl. Nanas No. 90, Bukit Kecil, Palembang',NULL,'+6285678901234','customer'),
+	('John Doe','john.doe@example.com','hashed_password_1','123 Main St, City',NULL,'+6281234567890','admin'),
+	('Jane Smith','jane.smith@example.com','hashed_password_2','456 Oak St, Town',NULL,'+6289876543210','staff'),
+	('Bob Johnson','bob.johnson@example.com','hashed_password_3','789 Pine St, Village',NULL,'+6281112223333','customer'),
+	('Alice Lee','alice.lee@example.com','hashed_password_4','999 Elm St, Hamlet',NULL,'+6284445556666','customer'),
+	('David Wang','david.wang@example.com','hashed_password_5','567 Birch St, Suburb',NULL,'+6285556667777','admin');
+SELECT * FROM "users" WHERE "password" ILIKE 'agu%';
+SELECT * FROM "users" WHERE "password" ILIKE '%123';
 
-insert into "user" ("user_name", "password", "fullname", "email","gender")
-values 
-	('hilda_1','pw_1','hilda chintia','hilda.chintia@gmail.com','Perempuan'),
-	('maulana_2','pw_2','maulana rido','maulana.rido@gmail.com','Laki-laki'),
-	('nindya_3','px_3','nindya kurnia','nindya.kurnia@gmail.com','Perempuan');
-	
-update "user" set
-"user_name" = 'fajri_4',
-"password" = 'px_4',
-"fullname" = 'fajri pangestu',
-"email" = 'fajri.pangestu@gmail.com',
-"gender" = 'Laki-laki',
-"updated_At" = now()
-where "user_id" = 3;
+INSERT INTO "products" ("name","price","isAvailable","description","image")
+VALUES
+    ('Espresso', 13000, NULL, NULL, NULL),
+    ('Latte', 15000, NULL, NULL, NULL),
+    ('Cappuccino', 18000, NULL, NULL, NULL),
+    ('Tomato Basil Soup', 25000, NULL, NULL, NULL),
+    ('Steak and Arugula Salad', 20000, NULL, NULL, NULL),
+    ('Citrus Punch Fizz', 13000, NULL, NULL, NULL),
+    ('Berry Hibiscus Cooler', 15000, NULL, NULL, NULL),
+    ('Green Tea Mojito', 18000, NULL, NULL, NULL);
 
-delete from "user" where "user_id" = 1;
-delete from "user" where "user_id" in (4, 5, 6);
+SELECT * FROM "products";
 
-/*penggunaan alter*/
-/*mengganti nama pada table "product*/
-alter table "product" rename "many_supply" to "quantity";
-alter table "product" rename "product_id" to "id";
-alter table "promo" rename "promo_id" to "id";
-alter table "order" rename "order_id" to "id";
-alter table "user" rename "user_id" to "id";
+INSERT INTO "categories" ("name")
+VALUES
+    ('coffee'),
+    ('food'),
+    ('nonCoffe');
 
-/*menambah column pada table "product*/
-alter table "product" add column "description" text;
-alter table "product" add column "inAvaliable" bool;
-alter table "promo" add column "category" varchar(50);
-update "promo" set "category" = 'coffe' where "promo_id" = 1;
-update "promo" set "category" = 'food' where "promo_id" = 2;
-update "promo" set "description" = '15% special discount on food items for student with student ID' where "promo_id" = 2;
+INSERT INTO "productCategories" ("productId","categoriesId")
+VALUES
+    (1,1),
+    (2,1),
+    (3,1),
+    (4,2),
+    (5,2),
+    (6,3),
+    (7,3),
+    (8,3);
 
-/*menghapus column pada table "product*/
-alter table "product" drop column "inAvaliable";
+INSERT INTO "promo" ("name","code","description","percentage","expiredAt","maximumPromo","minimumAmount")
+VALUES
+    ('Fazz Food 11-11', 'FAZZFOOD50', NULL, 0.5, now() + INTERVAL '1 day', 50000, 20000),
+    ('Ditraktir 11-11', 'DITRAKTIR60', NULL, 0.6, now() + INTERVAL '1 day', 35000, 10000);
+INSERT INTO "orders"("userId", "orderNumber", "promoId", "total", "taxAmount", "status", "deliveryAddress", "fullName")
+VALUES
+    (1, '#001-10112023-0001', NULL, (
+        (SELECT "price" FROM "products" WHERE "id" = 1) + 
+        (SELECT "price" FROM "products" WHERE "id" = 4) + 
+        (SELECT "price" FROM "products" WHERE "id" = 8)), 0, 
+        'ON-PROCCES', 
+        'Jl. Merdeka No. 12, Bukit Kecil, Palembang', 
+        'Agus Setiawan');
 
-/*mengganti tipe data column pada table "user"*/
-alter table "user" alter column "gender" type varchar(50);
-
-/*menambah batasan isi column pada table "user"*/
-alter table "user" add constraint year_check check ("gender" in ('Laki-laki', 'Perempuan'));
-
-/*penggunaan relation*/
-/*pada table "order"*/
-/*mengganti nama*/
-alter table "order" rename "costumer_name" to "user_id";
-/*ubah menjadi int = 0*/
-update "order" set
-"user_id" = 0
-where "id" in (2,3);
-/*definisikan int pada column "user_id"*/
-alter table "order" alter column "user_id" type int using "user_id"::int;
-/* buatkan reference antara "user_id" dengan "id" dari table "user" (masih error)*/
-alter table "order" add column "user_id" int references "user" ("id");
-
-/*penggunaan select & join*/
-/* untuk ambil semua data (*) dengan sort (category = coffe)*/
-select *from "product" where "category" = 'coffe';
+SELECT * FROM "orders";
